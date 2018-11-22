@@ -1,7 +1,7 @@
 package demo.calculator;
 
 import java.util.Arrays;
-import java.util.function.IntBinaryOperator;
+import java.util.function.DoubleBinaryOperator;
 
 public enum Operation {
 	add  ("add", (x,y) -> x+y),
@@ -10,9 +10,9 @@ public enum Operation {
 	div  ("div", (x,y) -> y/x);
 	
 	private final String symbol;
-	private final IntBinaryOperator op;
+	private final DoubleBinaryOperator op;
 	
-	Operation(String symbol, IntBinaryOperator op) {
+	Operation(String symbol, DoubleBinaryOperator op) {
 		this.symbol = symbol;
 		this.op = op;
 	}
@@ -22,8 +22,8 @@ public enum Operation {
 		return symbol;
 	}
 	
-	public int apply(int x, int y) {
-		return op.applyAsInt(x, y);
+	public double apply(double x, double y) {
+		return op.applyAsDouble(x, y);
 	}
 	
 	public static boolean contains(String token) {
