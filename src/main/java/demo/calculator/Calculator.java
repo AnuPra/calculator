@@ -34,12 +34,12 @@ public class Calculator
 			
 			if (ch ==')') {
 				open--;
-				processTokenBeforeCloseBrace(token.toString());
+				processTokenBeforeCloseBrace(token.toString().trim());
 			}else if (ch == '(') {
 				open++;
-				processTokenBeforeOpenBrace(token.toString());
+				processTokenBeforeOpenBrace(token.toString().trim());
 			} else if (ch ==',') {
-				processTokenBeforeComma(token.toString());
+				processTokenBeforeComma(token.toString().trim());
 			} 
 			print();
 		}
@@ -71,15 +71,19 @@ public class Calculator
 		String op = operators.pop();
 		if (op.equals("let")) var.removeOutOfScopeVariable();
 		else applyOperation(op);
-
-		if (!operators.isEmpty() && operators.peek().equals("let")) {
-			boolean result = var.assignVariableIfNotAlreadyAssigned(values.empty()?null:values.peek());
-			if (result) values.pop();
-		}
 	}
 	
 	void processNonEmptyTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
-		double value = (Utility.checkIfNumber(token) ? Double.valueOf(token.toString()) : var.getAssignedValue(token).get());
+		double value;
+		if (Utility.checkIfNumber(token)) {
+			value = Double.valueOf(token.toString());
+		} else {
+			Optional<Double> result = var.getAssignedValue(token); 
+			if (result.isPresent())
+				value = result.get();
+			else
+				throw new InvalidExpressionException("Invalid arguments");
+		}
 		values.push(value);	
 		String op = operators.pop();
 		applyOperation(op);
@@ -119,10 +123,11 @@ public class Calculator
 	}
 	
 	void processEmptyTokenBeforeComma() {
+		LOG.log(Level.DEBUG, "Inside processEmptyTokenBeforeComma");
 		if (operators.peek().equals("let")) {
-			boolean result = var.assignVariableIfNotAlreadyAssigned(values.empty()?null:values.peek());
+			boolean result = var.assignVariable(values.empty()?null:values.peek());
 			if (result) values.pop();
-		}
+		} 
 	}
 	
 	void processVariableBeforeComma(String token) {

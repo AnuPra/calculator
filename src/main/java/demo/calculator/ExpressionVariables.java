@@ -38,20 +38,7 @@ public class ExpressionVariables {
 		else return Optional.empty();
 	}
 
-	
-	public boolean assignVariableIfNotAlreadyAssigned(Double value) {
-		if (!variables.empty()) {
-			if (!assignedVariables.containsKey(variables.peek())) {
-				List<Double> values = new ArrayList<Double>();
-				values.add(value);
-				assignedVariables.put(variables.peek(), values);
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public void assignVariable(Double value) {
+	public boolean assignVariable(Double value) {
 		if (!variables.empty()) {
 			if (!assignedVariables.containsKey(variables.peek())) {
 				List<Double> values = new ArrayList<Double>();
@@ -62,7 +49,9 @@ public class ExpressionVariables {
 				values.add(value);
 				assignedVariables.put(variables.peek(), values);
 			}
+			return true;
 		}
+		return false;
 	}
 	
 	public void addVariable(String token) {

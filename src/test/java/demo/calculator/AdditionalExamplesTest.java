@@ -40,4 +40,29 @@ public class AdditionalExamplesTest extends TestCase{
 		Calculator obj = new Calculator();
 	    assertEquals(obj.evaluate("div(1.2,3.4)"),"0.35294117647058826");
 	}
+	
+   public void testDuplicateVariablesInScope() throws InvalidExpressionException {
+	    Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("let(a,5,let(b,let(a,10,add(a,5)),mult(b,a)))"),"75");
+	}
+   
+   public void testExample4() throws InvalidExpressionException {
+	    Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("let(a,5,let(b,let(a,add(5,10),add(a,5)),mult(b,a)))"),"100");
+	}
+
+   public void testExample5() throws InvalidExpressionException {
+	    Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("let(a,5,add(let(a,10,mult(a,10)),a))"),"105");
+	}
+
+   public void testExample6() throws InvalidExpressionException {
+	    Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("let(a,5,add(let(a,let(b,add(3,2),add(b,5)),mult(a,10)),a))"),"105");
+	}
+
+   public void testExample7() throws InvalidExpressionException {
+	    Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("let  (  abb  ,  5  ,  add   (   let  (a ,  let( b  ,   add    (  3 ,  2  ) ,   add   (  b   , 5  )    ) ,  mult   ( a  , 10 )  ),abb  )   )"),"105");
+	}
 }

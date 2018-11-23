@@ -65,8 +65,4 @@ public class ExamplesTest
         assertEquals(obj.evaluate("add(1,2)"),"3");
     }
     
-    public void testDuplicateVariablesInScope() throws InvalidExpressionException {
-	    Calculator obj = new Calculator();
-	    assertEquals(obj.evaluate("let(a,5,let(b,let(a,10,add(a,5)),mult(b,a)))"),"75");
-	}
-}
+ }

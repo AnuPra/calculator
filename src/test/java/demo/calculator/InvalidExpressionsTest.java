@@ -45,6 +45,17 @@ public class InvalidExpressionsTest extends TestCase {
 		}
 	}
 	
+	public void testUnbalancedParenthesis1() {
+		try {
+	     Calculator obj = new Calculator();
+         obj.evaluate("let  (  abb  ,  5  ,  add   (   let  (a ,  let( b  ,   add      3 ,  2  ) ,   add   (  b   , 5  )     ,  mult   ( a  , 10 )  ),abb  )   )");
+         fail("Expected exception for unbalanced parenthesis");
+		} catch (Exception ex) {
+			System.out.println(ex.getMessage());
+			assertTrue(ex.getMessage().contains("Invalid arguments"));
+		}
+	}
+	
 	public void testZeroDenominatorForDiv() {
 		try {
 	     Calculator obj = new Calculator();
@@ -54,4 +65,15 @@ public class InvalidExpressionsTest extends TestCase {
 			assertTrue(ex.getMessage().contains("Invalid denominator"));
 		}
 	}	
+	
+	public void testExample6() throws InvalidExpressionException {
+		try {
+		    Calculator obj = new Calculator();
+		    obj.evaluate("let(a,5,add(let(a,let(b,add(3,2),add(b,5)),mult(a,10)),c))");
+		    fail("Expected exception");
+		} catch (Exception ex) {
+			assertTrue(ex.getMessage().contains("Invalid arguments"));
+		}
+	}
+
 }
