@@ -16,4 +16,8 @@ public class CalculatorTest extends TestCase{
 	public void testEmptyArgument() {
 		Calculator.main(new String[] {" "});
 	}	
+	
+	public void testInvalidExpressionException() {
+		Calculator.main(new String[] {"add(1,2"});
+	}	
 }

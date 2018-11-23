@@ -8,11 +8,9 @@ public class Utility {
 	}
 	
 	public static boolean checkIfNumber(String token) {
-		boolean result = true;
-		if (token.isEmpty()) result = false;
-		for (int i=0;i<token.length();i++) 
-			if (!Character.isDigit(token.charAt(i))) {result = false; break;};
-		return result;
+		if (token.isEmpty()) return false;
+		if (token.matches("[0-9]+(.[0-9]+)*")) return true;
+		return false;
 	}
 	
 	public static void validateValuesForGivenOperation(double x, String op) throws InvalidExpressionException {

@@ -19,35 +19,39 @@ public class Calculator
 	
 	String evaluate(String expr) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Entering evaluate()");
-		LoggerConfig.setLogLevel("0");
 		
 		StringBuilder token = new StringBuilder();
 		int open=0;
 		
 		for (int index=0;index<expr.length();index++) {
 			char ch = expr.charAt(index);
+	
+			token = new StringBuilder();
+			while(index<expr.length() && (ch=expr.charAt(index))!=',' && ch!='(' && ch!=')') {
+				token.append(ch);
+				index++;
+			}
 			LOG.log(Level.DEBUG, (ch+"--->"+token));
+			
 			if (ch ==')') {
 				open--;
 				processCloseBrace(token.toString());
-				token = new StringBuilder();
 			}else if (ch == '(') {
 				open++;
 				processOpenBrace(token.toString());
-				token = new StringBuilder();
 			} else if (ch ==',') {
 				processComma(token.toString());
-				token = new StringBuilder();
-			} else {
-				token.append(ch);
-				while(index+1<expr.length() && (ch=expr.charAt(index+1))!=',' && ch!='(' && ch!=')') {
-					index++;
-					token.append(ch);
-				}
-			}	
+			} 
 		}
-		LOG.log(Level.DEBUG, "-------Exiting evaluate---------------");
+		
 		if (open!=0) throw new InvalidExpressionException("unbalanced parenthesis");
+		
+		LOG.log(Level.DEBUG, "-------Exiting evaluate---------------");
+		
+		return formatOutput();
+	}
+	
+	String formatOutput() {
 		double result = values.pop();
 		
 		if (String.valueOf(result).endsWith(".0")) 
@@ -90,7 +94,6 @@ public class Calculator
 		if (values.empty()) throw new InvalidExpressionException("Invalid arguments");
 		double val2 = values.pop();
 		
-		System.out.println(val1+"<"+val2);
 		Utility.validateValuesForGivenOperation(val1, op);
 		double result = Operation.valueOf(op).apply(val1, val2);
 		values.push(result);	
@@ -109,9 +112,8 @@ public class Calculator
 	void processOpenBrace(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processOpenBrace");
 		
-		if (token.equals("let") || Operation.contains(token)) operators.push(token);
-		else throw new InvalidExpressionException("Invalid operation");
-		
+		Utility.validateOperator(token);
+		operators.push(token);
 		print();
 	}
 	
@@ -133,7 +135,7 @@ public class Calculator
 	}
 	
 	void processCommaForNumber(String token) {
-		double value = Integer.valueOf(token.toString());
+		double value = Double.valueOf(token.toString());
 		if (operators.peek().equals("let")) {
 			String key = variables.peek();
 			assignedVariables.put(key, value);
@@ -151,21 +153,15 @@ public class Calculator
     {
 		LOG.log(Level.DEBUG, "Entered main()");
 		
-		if (args.length <=0  || args[0].isEmpty()) {
+		if (args.length <=0  || args[0].trim().isEmpty()) {
 			LOG.log(Level.ERROR, "Missing expression");
-			return;
-		}
-		
-		String expr = args[0];
-		if (expr.trim().isEmpty()) {
-			LOG.log(Level.ERROR, "Blank expression");
 			return;
 		}
 		
 		try {
 			Calculator obj = new Calculator();
 			
-			String result = obj.evaluate(expr);
+			String result = obj.evaluate(args[0]);
 			System.out.println(result);
 		} catch (Exception ex) {
 			LOG.log(Level.ERROR, ex.getMessage());

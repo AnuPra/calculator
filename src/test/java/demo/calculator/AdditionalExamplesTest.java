@@ -21,4 +21,23 @@ public class AdditionalExamplesTest extends TestCase{
 	    assertEquals(obj.evaluate("let(a,let(b,let(a,let(b,add(10,5),add(b,3)),add(a,5)),add(b,3)),add(a,6))"),"32");
 	}
 	
+	public void testAddWithDouble() throws InvalidExpressionException {
+		Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("add(1.2,3.4)"),"4.6");
+	}
+	
+	public void testSubWithDouble() throws InvalidExpressionException {
+		Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("sub(1.2,3.4)"),"2.2");
+	}
+	
+	public void testMultWithDouble() throws InvalidExpressionException {
+		Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("mult(1.2,3.4)"),"4.08");
+	}
+	
+	public void testDivWithDouble() throws InvalidExpressionException {
+		Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("div(1.2,3.4)"),"0.35294117647058826");
+	}
 }

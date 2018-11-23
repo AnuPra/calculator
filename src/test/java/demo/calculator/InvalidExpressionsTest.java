@@ -11,7 +11,7 @@ public class InvalidExpressionsTest extends TestCase {
          obj.evaluate("power(1,2)");
          fail("Expected exception for invalid operation");
 		} catch (Exception ex) {
-			assertTrue(ex.getMessage().contains("Invalid operation"));
+			assertTrue(ex.getMessage().contains("invalid operation"));
 		}
 	}
 	
@@ -19,6 +19,16 @@ public class InvalidExpressionsTest extends TestCase {
 		try {
 	     Calculator obj = new Calculator();
          obj.evaluate("add(2)");
+         fail("Expected exception for invalid arguments");
+		} catch (Exception ex) {
+			assertTrue(ex.getMessage().contains("Invalid arguments"));
+		}
+	}
+	
+	public void testInvalidArguments1() {
+		try {
+	     Calculator obj = new Calculator();
+         obj.evaluate("add()");
          fail("Expected exception for invalid arguments");
 		} catch (Exception ex) {
 			assertTrue(ex.getMessage().contains("Invalid arguments"));

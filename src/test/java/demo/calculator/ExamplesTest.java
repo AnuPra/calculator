@@ -1,7 +1,6 @@
 package demo.calculator;
 
 import demo.calculator.Calculator;
-import demo.calculator.InvalidExpressionException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

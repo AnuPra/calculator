@@ -8,7 +8,7 @@ public class LoggerConfig {
 
 	private final static org.apache.logging.log4j.Logger LOG = LogManager.getRootLogger();
 	
-	public static void setLogLevel(String level) {
+	public void setLogLevel(String level) {
 		Level newLevel;
 		
 		switch(level.trim()) {
@@ -20,14 +20,20 @@ public class LoggerConfig {
 		
 		 Configurator.setRootLevel(newLevel);
 
-		 System.out.println("Log level changed to"+ newLevel);
+		 LOG.log(Level.ALL,"This is for all messages");
+		 LOG.log(Level.ERROR,"This is for error messages");
+		 LOG.log(Level.DEBUG,"This is for debug messages");
+		 LOG.log(Level.INFO,"This is for info messages");
+		 
 	}
 	
 	public static void main(String[] args) {
-		if (args.length <=0  || args[0].isEmpty()) {
+		if (args.length <=0  || args[0].trim().isEmpty()) {
 			LOG.log(Level.ERROR, "Missing expression");
 			return;
 		}
-		setLogLevel(args[0]);
+		
+		LoggerConfig obj = new LoggerConfig();
+		obj.setLogLevel(args[0]);
 	}
 }
