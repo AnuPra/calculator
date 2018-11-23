@@ -65,4 +65,9 @@ public class AdditionalExamplesTest extends TestCase{
 	    Calculator obj = new Calculator();
 	    assertEquals(obj.evaluate("let  (  abb  ,  5  ,  add   (   let  (a ,  let( b  ,   add    (  3 ,  2  ) ,   add   (  b   , 5  )    ) ,  mult   ( a  , 10 )  ),abb  )   )"),"105");
 	}
+   
+   public void testExample8() throws InvalidExpressionException {
+	    Calculator obj = new Calculator();
+	    assertEquals(obj.evaluate("let(a,5,add(add(let(a,10,add(a,5)),let(a,5,mult(a,10))),a))"),"70");
+	}
 }

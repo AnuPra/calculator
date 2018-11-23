@@ -8,6 +8,10 @@ import org.apache.logging.log4j.*;
 import demo.calculator.Operation;
 import demo.calculator.Utility;
 
+/**
+ * Main class to parse expression from left to right and to print computed value.
+ * @author anusha
+ */
 public class Calculator 
 {
 	private final static org.apache.logging.log4j.Logger LOG = LogManager.getRootLogger();
@@ -16,6 +20,13 @@ public class Calculator
 	Stack<Double> values = new Stack<Double>();
 	ExpressionVariables var = new ExpressionVariables();
 	
+	/**
+	 * Parses the expression from left to right into tokens and symbols - '(' , ')' and ','. 
+	 * As per symbol, token processing is carried out in respective method.
+	 * @param expr
+	 * @return result
+	 * @throws InvalidExpressionException
+	 */
 	String evaluate(String expr) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Entering evaluate()");
 		
@@ -51,6 +62,10 @@ public class Calculator
 		return formatOutput();
 	}
 	
+	/**
+	 * Removes decimal part if it is zero, else returns with decimal part.
+	 * @return
+	 */
 	String formatOutput() {
 		double result = values.pop();
 		
@@ -60,6 +75,11 @@ public class Calculator
 			return String.valueOf(result);
 	}
 	
+	/**
+	 * Invokes methods based on empty or non-empty token before closing brace.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
 	void processTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processCloseBrace");
 		
@@ -67,12 +87,24 @@ public class Calculator
 		else processNonEmptyTokenBeforeCloseBrace(token);
 	}
 	
+	/**
+	 * If top operator is 'let', removes variables out of scope; Else applies operator on top 2 value stack members. 
+	 * @throws InvalidExpressionException
+	 */
 	void processEmptyTokenBeforeCloseBrace() throws InvalidExpressionException {
 		String op = operators.pop();
 		if (op.equals("let")) var.removeOutOfScopeVariable();
 		else applyOperation(op);
 	}
 	
+	/**
+	 * If token before close brace is:
+	 * 1) Number - Pushes to stack
+	 * 2) Variable - Gets value from assigned variables, if present. Else throws exception.
+	 * Applies operation on top 2 members of value stack.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
 	void processNonEmptyTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
 		double value;
 		if (Utility.checkIfNumber(token)) {
@@ -89,6 +121,11 @@ public class Calculator
 		applyOperation(op);
 	}
 	
+	/**
+	 * Pops 2 values and applies given operation on them.
+	 * @param op
+	 * @throws InvalidExpressionException
+	 */
 	void applyOperation(String op) throws InvalidExpressionException {
 		if (values.size() < 2) throw new InvalidExpressionException("Invalid arguments");
 		double val1 = values.pop();
@@ -99,6 +136,11 @@ public class Calculator
 		values.push(result);	
 	}
 	
+	/**
+	 * Validates token before open brace and pushes to operator stack.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
 	void processTokenBeforeOpenBrace(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processOpenBrace");
 		
@@ -106,6 +148,11 @@ public class Calculator
 		operators.push(token);
 	}
 	
+	/**
+	 * Invokes respective methods based on if token is number or empty or variable.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
 	void processTokenBeforeComma(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processComma");
 		
@@ -116,12 +163,20 @@ public class Calculator
 		else processVariableBeforeComma(token);
 	}
 	
+	/**
+	 * If top member of operator stack is 'let' assigns token to top member of variable stack
+	 * Else pushes token to value stack.
+	 * @param token
+	 */
 	void processNumberBeforeComma(String token) {
 		double value = Double.valueOf(token.toString());
 		if (operators.peek().equals("let")) var.assignVariable(value);
 		else values.push(value); 
 	}
 	
+	/**
+	 * If top member of operator stack is 'let' assigns top member of value stack to top member of variable stack 
+	 */
 	void processEmptyTokenBeforeComma() {
 		LOG.log(Level.DEBUG, "Inside processEmptyTokenBeforeComma");
 		if (operators.peek().equals("let")) {
@@ -130,6 +185,11 @@ public class Calculator
 		} 
 	}
 	
+	/**
+	 * If top member of operator stack is 'let' assigns token to variable stack
+	 * Else if variable is assigned, then its value is pushed to value stack.
+	 * @param token
+	 */
 	void processVariableBeforeComma(String token) {
 		if (operators.peek().equals("let")) var.addVariable(token);
 		else {
@@ -138,12 +198,19 @@ public class Calculator
 		}
 	}
 	
+	/**
+	 * Prints Operator stack, value stack, assigned variables and stack of variables.
+	 */
 	void print() {
 		LOG.log(Level.DEBUG, "Operators:"+Arrays.toString(operators.toArray()));
 		LOG.log(Level.DEBUG, "values:"+Arrays.toString(values.toArray()));
 		var.print();
 	}
 	
+	/***
+	 * Check that first argument is expression and invokes the computation.
+	 * @param args
+	 */
 	public static void main( String[] args )
     {
 		LOG.log(Level.DEBUG, "Entered main()");
@@ -157,6 +224,7 @@ public class Calculator
 			Calculator obj = new Calculator();
 			
 			String result = obj.evaluate(args[0]);
+			LOG.log(Level.INFO, result);
 			System.out.println(result);
 		} catch (Exception ex) {
 			LOG.log(Level.ERROR, ex.getMessage());

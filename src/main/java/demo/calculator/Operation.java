@@ -3,6 +3,7 @@ package demo.calculator;
 import java.util.Arrays;
 import java.util.function.DoubleBinaryOperator;
 
+//Supports addition, subtraction, multiplication and division for two double values
 public enum Operation {
 	add  ("add", (x,y) -> x+y),
 	sub  ("sub", (x,y) -> x-y),

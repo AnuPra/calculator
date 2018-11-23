@@ -8,6 +8,7 @@ public class LoggerConfig {
 
 	private final static org.apache.logging.log4j.Logger LOG = LogManager.getRootLogger();
 	
+	// Sets log levels
 	public void setLogLevel(String level) {
 		Level newLevel;
 		
@@ -27,6 +28,14 @@ public class LoggerConfig {
 		 
 	}
 	
+	/**
+	 * To set log levels across root. Expects 1 argument. 
+	 *  "0" : ALL
+	 *  "1" : ERROR
+	 *  "3" : DEBUG
+	 *  Else INFO
+	 * @param args
+	 */
 	public static void main(String[] args) {
 		if (args.length <=0  || args[0].trim().isEmpty()) {
 			LOG.log(Level.ERROR, "Missing expression");
