@@ -33,7 +33,6 @@ public class OperationTest extends TestCase {
 
 	public void testMultiplication() {
 		double val1 = generateRandomNum(), val2 = generateRandomNum();
-		System.out.println(val1+":"+val2);
 		double result = Operation.valueOf("mult").apply(val1, val2);
 		assertEquals(result, (val1*val2));
 	}

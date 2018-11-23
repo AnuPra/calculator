@@ -1,7 +1,7 @@
 package demo.calculator;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Optional;
 import java.util.Stack;
 import org.apache.logging.log4j.*;
 
@@ -14,8 +14,7 @@ public class Calculator
 			
 	Stack<String> operators = new Stack<String>();
 	Stack<Double> values = new Stack<Double>();
-	Stack<String> variables = new Stack<String>();
-	HashMap<String,Double> assignedVariables = new HashMap<String, Double>();
+	ExpressionVariables var = new ExpressionVariables();
 	
 	String evaluate(String expr) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Entering evaluate()");
@@ -31,17 +30,18 @@ public class Calculator
 				token.append(ch);
 				index++;
 			}
-			LOG.log(Level.DEBUG, (ch+"--->"+token));
+			LOG.log(Level.DEBUG, (token+""+ch));
 			
 			if (ch ==')') {
 				open--;
-				processCloseBrace(token.toString());
+				processTokenBeforeCloseBrace(token.toString());
 			}else if (ch == '(') {
 				open++;
-				processOpenBrace(token.toString());
+				processTokenBeforeOpenBrace(token.toString());
 			} else if (ch ==',') {
-				processComma(token.toString());
+				processTokenBeforeComma(token.toString());
 			} 
+			print();
 		}
 		
 		if (open!=0) throw new InvalidExpressionException("unbalanced parenthesis");
@@ -60,38 +60,34 @@ public class Calculator
 			return String.valueOf(result);
 	}
 	
-	void processCloseBrace(String token) throws InvalidExpressionException {
+	void processTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processCloseBrace");
 		
-		if (token.isEmpty()) processCloseBraceForEmptyToken();
-		else ProcessCloseBraceForNonEmptyToken(token);
-
-		print();
+		if (token.isEmpty()) processEmptyTokenBeforeCloseBrace();
+		else processNonEmptyTokenBeforeCloseBrace(token);
 	}
 	
-	void processCloseBraceForEmptyToken() throws InvalidExpressionException {
+	void processEmptyTokenBeforeCloseBrace() throws InvalidExpressionException {
 		String op = operators.pop();
-		if (op.equals("let")) {
-			String key = variables.pop();
-			assignedVariables.remove(key);
-		} else applyOperation(op);
-		assignVariableIfLetOnTopOfOperatorStack();
+		if (op.equals("let")) var.removeOutOfScopeVariable();
+		else applyOperation(op);
+
+		if (!operators.isEmpty() && operators.peek().equals("let")) {
+			boolean result = var.assignVariableIfNotAlreadyAssigned(values.empty()?null:values.peek());
+			if (result) values.pop();
+		}
 	}
 	
-	void ProcessCloseBraceForNonEmptyToken(String token) throws InvalidExpressionException {
-		
-		double value = (Utility.checkIfNumber(token) ? Double.valueOf(token.toString()) : assignedVariables.get(token));
-		values.push(value);
-			
+	void processNonEmptyTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
+		double value = (Utility.checkIfNumber(token) ? Double.valueOf(token.toString()) : var.getAssignedValue(token).get());
+		values.push(value);	
 		String op = operators.pop();
 		applyOperation(op);
 	}
 	
 	void applyOperation(String op) throws InvalidExpressionException {
-		if (values.empty()) throw new InvalidExpressionException("Invalid arguments");
+		if (values.size() < 2) throw new InvalidExpressionException("Invalid arguments");
 		double val1 = values.pop();
-
-		if (values.empty()) throw new InvalidExpressionException("Invalid arguments");
 		double val2 = values.pop();
 		
 		Utility.validateValuesForGivenOperation(val1, op);
@@ -99,54 +95,48 @@ public class Calculator
 		values.push(result);	
 	}
 	
-	void assignVariableIfLetOnTopOfOperatorStack() {
-		if (!operators.isEmpty() && operators.peek().equals("let") && !variables.empty()) {
-			String key = variables.peek();
-			if (!assignedVariables.containsKey(key)) {
-				double value = values.pop();
-				assignedVariables.put(key, value);
-			}
-		}
-	}
-	
-	void processOpenBrace(String token) throws InvalidExpressionException {
+	void processTokenBeforeOpenBrace(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processOpenBrace");
 		
 		Utility.validateOperator(token);
 		operators.push(token);
-		print();
 	}
 	
-	void processComma(String token) {
+	void processTokenBeforeComma(String token) throws InvalidExpressionException {
 		LOG.log(Level.DEBUG, "Inside processComma");
 		
-		if (Utility.checkIfNumber(token)) processCommaForNumber(token);
-		else {
-			if (assignedVariables.containsKey(token)) {
-				values.push(assignedVariables.get(token));
-			} else if (!token.isEmpty()){
-				variables.add(token);
-			} else {
-				assignVariableIfLetOnTopOfOperatorStack();
-			}
-		}
-
-		print();
+		if (operators.isEmpty()) throw new InvalidExpressionException("Invalid operator");
+		
+		if (Utility.checkIfNumber(token)) processNumberBeforeComma(token);
+		else if (token.isEmpty()) processEmptyTokenBeforeComma();
+		else processVariableBeforeComma(token);
 	}
 	
-	void processCommaForNumber(String token) {
+	void processNumberBeforeComma(String token) {
 		double value = Double.valueOf(token.toString());
+		if (operators.peek().equals("let")) var.assignVariable(value);
+		else values.push(value); 
+	}
+	
+	void processEmptyTokenBeforeComma() {
 		if (operators.peek().equals("let")) {
-			String key = variables.peek();
-			assignedVariables.put(key, value);
-		} else { values.push(value); }
+			boolean result = var.assignVariableIfNotAlreadyAssigned(values.empty()?null:values.peek());
+			if (result) values.pop();
+		}
+	}
+	
+	void processVariableBeforeComma(String token) {
+		if (operators.peek().equals("let")) var.addVariable(token);
+		else {
+			Optional<Double> val = var.getAssignedValue(token);
+			if (val.isPresent()) values.push(val.get());
+		}
 	}
 	
 	void print() {
 		LOG.log(Level.DEBUG, "Operators:"+Arrays.toString(operators.toArray()));
 		LOG.log(Level.DEBUG, "values:"+Arrays.toString(values.toArray()));
-		LOG.log(Level.DEBUG, "assignedVariables:"+Arrays.asList(assignedVariables));
-		LOG.log(Level.DEBUG, "Variables:"+Arrays.toString(variables.toArray()));
+		var.print();
 	}
 	
 	public static void main( String[] args )
