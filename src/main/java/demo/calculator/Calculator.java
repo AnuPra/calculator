@@ -1,149 +1,233 @@
 package demo.calculator;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Optional;
 import java.util.Stack;
+import org.apache.logging.log4j.*;
+
+import demo.calculator.Operation;
+import demo.calculator.Utility;
 
 /**
- * Hello world!
- *
+ * Main class to parse expression from left to right and to print computed value.
+ * @author anusha
  */
 public class Calculator 
 {
+	private final static org.apache.logging.log4j.Logger LOG = LogManager.getRootLogger();
+			
 	Stack<String> operators = new Stack<String>();
-	Stack<Integer> values = new Stack<Integer>();
-	Stack<String> variables = new Stack<String>();
-	HashMap<String,Integer> assignedVariables = new HashMap<String, Integer>();
+	Stack<Double> values = new Stack<Double>();
+	ExpressionVariables var = new ExpressionVariables();
 	
-	int evaluate(String expr) {
+	/**
+	 * Parses the expression from left to right into tokens and symbols - '(' , ')' and ','. 
+	 * As per symbol, token processing is carried out in respective method.
+	 * @param expr
+	 * @return result
+	 * @throws InvalidExpressionException
+	 */
+	String evaluate(String expr) throws InvalidExpressionException {
+		LOG.log(Level.DEBUG, "Entering evaluate()");
+		
 		StringBuilder token = new StringBuilder();
+		int open=0;
 		
 		for (int index=0;index<expr.length();index++) {
 			char ch = expr.charAt(index);
-			System.out.println(token+"---"+ch);
-			if (ch ==')') {
-				processCloseBrace(token.toString());
-				token = new StringBuilder();
-			}else if (ch == '(') {
-				processOpenBrace(token.toString());
-				token = new StringBuilder();
-			} else if (ch ==',') {
-				processComma(token.toString());
-				token = new StringBuilder();
-			} else {
+	
+			token = new StringBuilder();
+			while(index<expr.length() && (ch=expr.charAt(index))!=',' && ch!='(' && ch!=')') {
 				token.append(ch);
-				while(index+1<expr.length() && (ch=expr.charAt(index+1))!=',' && ch!='(' && ch!=')') {
-					index++;
-					token.append(ch);
-				}
-			}	
-		}
-		System.out.println("-------Exiting evaluate---------------");
-		return values.pop();
-	}
-	
-	void processCloseBrace(String token) {
-		System.out.println("Inside processCloseBrace");
-		
-		if (token.isEmpty()) processCloseBraceForEmptyToken();
-		else ProcessCloseBraceForNonEmptyToken(token);
-
-		print();
-	}
-	
-	void processCloseBraceForEmptyToken() {
-		String op = operators.pop();
-		if (op.equals("let")) {
-			String key = variables.pop();
-			assignedVariables.remove(key);
-		} else applyOperation(op);
-		assignVariableIfLet();
-	}
-	
-	void ProcessCloseBraceForNonEmptyToken(String token) {
-		
-		int value = (checkIfNumber(token) ? Integer.valueOf(token.toString()) : assignedVariables.get(token));
-		values.push(value);
+				index++;
+			}
+			LOG.log(Level.DEBUG, (token+""+ch));
 			
+			if (ch ==')') {
+				open--;
+				processTokenBeforeCloseBrace(token.toString().trim());
+			}else if (ch == '(') {
+				open++;
+				processTokenBeforeOpenBrace(token.toString().trim());
+			} else if (ch ==',') {
+				processTokenBeforeComma(token.toString().trim());
+			} 
+			print();
+		}
+		
+		if (open!=0) throw new InvalidExpressionException("unbalanced parenthesis");
+		
+		LOG.log(Level.DEBUG, "-------Exiting evaluate---------------");
+		
+		return formatOutput();
+	}
+	
+	/**
+	 * Removes decimal part if it is zero, else returns with decimal part.
+	 * @return
+	 */
+	String formatOutput() {
+		double result = values.pop();
+		
+		if (String.valueOf(result).endsWith(".0")) 
+			return (String.valueOf(result).substring(0, String.valueOf(result).length()-2));
+		else
+			return String.valueOf(result);
+	}
+	
+	/**
+	 * Invokes methods based on empty or non-empty token before closing brace.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
+	void processTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
+		LOG.log(Level.DEBUG, "Inside processCloseBrace");
+		
+		if (token.isEmpty()) processEmptyTokenBeforeCloseBrace();
+		else processNonEmptyTokenBeforeCloseBrace(token);
+	}
+	
+	/**
+	 * If top operator is 'let', removes variables out of scope; Else applies operator on top 2 value stack members. 
+	 * @throws InvalidExpressionException
+	 */
+	void processEmptyTokenBeforeCloseBrace() throws InvalidExpressionException {
+		String op = operators.pop();
+		if (op.equals("let")) var.removeOutOfScopeVariable();
+		else applyOperation(op);
+	}
+	
+	/**
+	 * If token before close brace is:
+	 * 1) Number - Pushes to stack
+	 * 2) Variable - Gets value from assigned variables, if present. Else throws exception.
+	 * Applies operation on top 2 members of value stack.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
+	void processNonEmptyTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
+		double value;
+		if (Utility.checkIfNumber(token)) {
+			value = Double.valueOf(token.toString());
+		} else {
+			Optional<Double> result = var.getAssignedValue(token); 
+			if (result.isPresent())
+				value = result.get();
+			else
+				throw new InvalidExpressionException("Invalid arguments");
+		}
+		values.push(value);	
 		String op = operators.pop();
 		applyOperation(op);
 	}
 	
-	void applyOperation(String op) {
-		int val1 = values.pop();
-		int val2 = values.pop();
-		int result = Operation.valueOf(op).apply(val1, val2);
+	/**
+	 * Pops 2 values and applies given operation on them.
+	 * @param op
+	 * @throws InvalidExpressionException
+	 */
+	void applyOperation(String op) throws InvalidExpressionException {
+		if (values.size() < 2) throw new InvalidExpressionException("Invalid arguments");
+		double val1 = values.pop();
+		double val2 = values.pop();
+		
+		Utility.validateValuesForGivenOperation(val1, op);
+		double result = Operation.valueOf(op).apply(val1, val2);
 		values.push(result);	
 	}
 	
-	void assignVariableIfLet() {
-		if (!operators.isEmpty() && operators.peek().equals("let") && !variables.empty()) {
-			String key = variables.peek();
-			if (!assignedVariables.containsKey(key)) {
-				int value = values.pop();
-				assignedVariables.put(key, value);
-			}
-		}
-	}
-	
-	void processOpenBrace(String token) {
-		System.out.println("Inside processOpenBrace");
+	/**
+	 * Validates token before open brace and pushes to operator stack.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
+	void processTokenBeforeOpenBrace(String token) throws InvalidExpressionException {
+		LOG.log(Level.DEBUG, "Inside processOpenBrace");
 		
-		String tokenString = token.toString();
-		if (tokenString.equals("let") || Operation.contains(tokenString)) {
-			operators.push(tokenString);
-		}
-
-		print();
+		Utility.validateOperator(token);
+		operators.push(token);
 	}
 	
-	void processComma(String token) {
-		System.out.println("Inside processComma");
+	/**
+	 * Invokes respective methods based on if token is number or empty or variable.
+	 * @param token
+	 * @throws InvalidExpressionException
+	 */
+	void processTokenBeforeComma(String token) throws InvalidExpressionException {
+		LOG.log(Level.DEBUG, "Inside processComma");
 		
-		if (checkIfNumber(token)) processCommaForNumber(token);
-		else {
-			if (assignedVariables.containsKey(token)) {
-				values.push(assignedVariables.get(token));
-			} else if (!token.isEmpty()){
-				variables.add(token);
-			} else {
-				assignVariableIfLet();
-			}
-		}
-
-		print();
+		if (operators.isEmpty()) throw new InvalidExpressionException("Invalid operator");
+		
+		if (Utility.checkIfNumber(token)) processNumberBeforeComma(token);
+		else if (token.isEmpty()) processEmptyTokenBeforeComma();
+		else processVariableBeforeComma(token);
 	}
 	
-	void processCommaForNumber(String token) {
-		int value = Integer.valueOf(token.toString());
+	/**
+	 * If top member of operator stack is 'let' assigns token to top member of variable stack
+	 * Else pushes token to value stack.
+	 * @param token
+	 */
+	void processNumberBeforeComma(String token) {
+		double value = Double.valueOf(token.toString());
+		if (operators.peek().equals("let")) var.assignVariable(value);
+		else values.push(value); 
+	}
+	
+	/**
+	 * If top member of operator stack is 'let' assigns top member of value stack to top member of variable stack 
+	 */
+	void processEmptyTokenBeforeComma() {
+		LOG.log(Level.DEBUG, "Inside processEmptyTokenBeforeComma");
 		if (operators.peek().equals("let")) {
-			String key = variables.peek();
-			assignedVariables.put(key, value);
-		} else {
-			values.push(value);
+			boolean result = var.assignVariable(values.empty()?null:values.peek());
+			if (result) values.pop();
+		} 
+	}
+	
+	/**
+	 * If top member of operator stack is 'let' assigns token to variable stack
+	 * Else if variable is assigned, then its value is pushed to value stack.
+	 * @param token
+	 */
+	void processVariableBeforeComma(String token) {
+		if (operators.peek().equals("let")) var.addVariable(token);
+		else {
+			Optional<Double> val = var.getAssignedValue(token);
+			if (val.isPresent()) values.push(val.get());
 		}
 	}
 	
+	/**
+	 * Prints Operator stack, value stack, assigned variables and stack of variables.
+	 */
 	void print() {
-		System.out.println("Operators:"+Arrays.toString(operators.toArray()));
-		System.out.println("values:"+Arrays.toString(values.toArray()));
-		System.out.println("assignedVariables:"+Arrays.asList(assignedVariables));
-		System.out.println("Variables:"+Arrays.toString(variables.toArray()));
+		LOG.log(Level.DEBUG, "Operators:"+Arrays.toString(operators.toArray()));
+		LOG.log(Level.DEBUG, "values:"+Arrays.toString(values.toArray()));
+		var.print();
 	}
 	
-	boolean checkIfNumber(String token) {
-		System.out.print("Inside checkIfNumber");
-		boolean result = true;
-		if (token.isEmpty()) result = false;
-		for (int i=0;i<token.length();i++) 
-			if (!Character.isDigit(token.charAt(i))) {result = false; break;};
-		return result;
-	}
-
+	/***
+	 * Check that first argument is expression and invokes the computation.
+	 * @param args
+	 */
 	public static void main( String[] args )
     {
-		Calculator obj = new Calculator();
-		obj.evaluate(args[1]);
-		System.out.println( "Hello World!" );
+		LOG.log(Level.DEBUG, "Entered main()");
+		
+		if (args.length <=0  || args[0].trim().isEmpty()) {
+			LOG.log(Level.ERROR, "Missing expression");
+			return;
+		}
+		
+		try {
+			Calculator obj = new Calculator();
+			
+			String result = obj.evaluate(args[0]);
+			LOG.log(Level.INFO, result);
+			System.out.println(result);
+		} catch (Exception ex) {
+			LOG.log(Level.ERROR, ex.getMessage());
+		}
     }
 }
