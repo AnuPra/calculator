@@ -28,7 +28,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	String evaluate(String expr) throws InvalidExpressionException {
-		LOG.log(Level.DEBUG, "Entering evaluate()");
+		LOG.log(Level.TRACE, "Entering evaluate()");
 		
 		StringBuilder token = new StringBuilder();
 		int open=0;
@@ -41,7 +41,7 @@ public class Calculator
 				token.append(ch);
 				index++;
 			}
-			LOG.log(Level.DEBUG, (token+""+ch));
+			LOG.log(Level.DEBUG, ("------------- Processing  "+token+""+ch));
 			
 			if (ch ==')') {
 				open--;
@@ -67,6 +67,7 @@ public class Calculator
 	 * @return
 	 */
 	String formatOutput() {
+		LOG.log(Level.TRACE, "Entering formatOutput()");
 		double result = values.pop();
 		
 		if (String.valueOf(result).endsWith(".0")) 
@@ -81,7 +82,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	void processTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
-		LOG.log(Level.DEBUG, "Inside processCloseBrace");
+		LOG.log(Level.TRACE, "Inside processTokenBeforeCloseBrace()");
 		
 		if (token.isEmpty()) processEmptyTokenBeforeCloseBrace();
 		else processNonEmptyTokenBeforeCloseBrace(token);
@@ -92,6 +93,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	void processEmptyTokenBeforeCloseBrace() throws InvalidExpressionException {
+		LOG.log(Level.TRACE, "Entering processEmptyTokenBeforeCloseBrace()");
 		String op = operators.pop();
 		if (op.equals("let")) var.removeOutOfScopeVariable();
 		else applyOperation(op);
@@ -106,6 +108,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	void processNonEmptyTokenBeforeCloseBrace(String token) throws InvalidExpressionException {
+		LOG.log(Level.TRACE, "Entering processNonEmptyTokenBeforeCloseBrace()");
 		double value;
 		if (Utility.checkIfNumber(token)) {
 			value = Double.valueOf(token.toString());
@@ -127,6 +130,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	void applyOperation(String op) throws InvalidExpressionException {
+		LOG.log(Level.TRACE, "Entering applyOperation()");
 		if (values.size() < 2) throw new InvalidExpressionException("Invalid arguments");
 		double val1 = values.pop();
 		double val2 = values.pop();
@@ -142,7 +146,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	void processTokenBeforeOpenBrace(String token) throws InvalidExpressionException {
-		LOG.log(Level.DEBUG, "Inside processOpenBrace");
+		LOG.log(Level.DEBUG, "Inside processTokenBeforeOpenBrace()");
 		
 		Utility.validateOperator(token);
 		operators.push(token);
@@ -154,7 +158,7 @@ public class Calculator
 	 * @throws InvalidExpressionException
 	 */
 	void processTokenBeforeComma(String token) throws InvalidExpressionException {
-		LOG.log(Level.DEBUG, "Inside processComma");
+		LOG.log(Level.TRACE, "Inside processTokenBeforeComma()");
 		
 		if (operators.isEmpty()) throw new InvalidExpressionException("Invalid operator");
 		
@@ -169,6 +173,8 @@ public class Calculator
 	 * @param token
 	 */
 	void processNumberBeforeComma(String token) {
+		LOG.log(Level.TRACE, "Entering processNumberBeforeComma()");
+		
 		double value = Double.valueOf(token.toString());
 		if (operators.peek().equals("let")) var.assignVariable(value);
 		else values.push(value); 
@@ -178,7 +184,8 @@ public class Calculator
 	 * If top member of operator stack is 'let' assigns top member of value stack to top member of variable stack 
 	 */
 	void processEmptyTokenBeforeComma() {
-		LOG.log(Level.DEBUG, "Inside processEmptyTokenBeforeComma");
+		LOG.log(Level.TRACE, "Entering processEmptyTokenBeforeComma()");
+		
 		if (operators.peek().equals("let")) {
 			boolean result = var.assignVariable(values.empty()?null:values.peek());
 			if (result) values.pop();
@@ -191,6 +198,8 @@ public class Calculator
 	 * @param token
 	 */
 	void processVariableBeforeComma(String token) {
+		LOG.log(Level.TRACE, "Entering processVariableBeforeComma()");
+		
 		if (operators.peek().equals("let")) var.addVariable(token);
 		else {
 			Optional<Double> val = var.getAssignedValue(token);
@@ -202,6 +211,8 @@ public class Calculator
 	 * Prints Operator stack, value stack, assigned variables and stack of variables.
 	 */
 	void print() {
+		LOG.log(Level.TRACE, "Entering print()");
+		
 		LOG.log(Level.DEBUG, "Operators:"+Arrays.toString(operators.toArray()));
 		LOG.log(Level.DEBUG, "values:"+Arrays.toString(values.toArray()));
 		var.print();
@@ -218,6 +229,13 @@ public class Calculator
 		if (args.length <=0  || args[0].trim().isEmpty()) {
 			LOG.log(Level.ERROR, "Missing expression");
 			return;
+		}
+	
+		LoggerConfig config = new LoggerConfig();
+		if (args.length>1) {
+			config.setLogLevel(args[1]);
+		} else {
+			config.setLogLevel("2");
 		}
 		
 		try {
