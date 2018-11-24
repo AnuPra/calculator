@@ -4,10 +4,10 @@ Calculator program in Java to evaluate expressions in simple integer expression 
 
 ### Command to run:
 
-java -jar ./target/calculator-0.0.1-SNAPSHOT-jar-with-dependencies.jar <expr> <logLevel>
+java -jar ./target/calculator-0.0.1-SNAPSHOT-jar-with-dependencies.jar "\<expression\>" "\<logLevel\>"
 
-where, <logLevel> :  This is set at default level of ERROR. The values are: 0 - ALL, 1-ERROR, 2-INFO, 3-
-                      DEBUG, 4-TRACE.  
+\<logLevel\> : Allowed values are: 0 - ALL, 1-ERROR, 2-INFO, 3-DEBUG, 4-TRACE.  Default is ERROR. 
+
 eg: java -jar ./target/calculator-0.0.1-SNAPSHOT-jar-with-dependencies.jar "let(a,add(1,2),add(3,a))" "4"  
 
 ### Build Status:
